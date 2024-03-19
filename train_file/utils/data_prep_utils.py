@@ -1,14 +1,15 @@
+import sys
+sys.path.append("C:\\Users\\michaelpiro1\\PycharmProjects\\training\\venv\\Lib\\site-packages")
 import shutil
-import demucs.separate
-import librosa
+import multiprocessing
 import os
 
-import numpy
-import torch
-import matplotlib.pyplot as plt
-import csv
-import sys
+import torchaudio
 
+import csv
+import demucs.separate
+import numpy
+import librosa
 FILE_TYPE = "--mp3"
 DTYPE = '--float32'
 TWO_STEMS = "--two-stems"
@@ -31,9 +32,14 @@ MODEL = "mdx_extra"
 # NO_DRUMS_EXT = 'no_drums' + EXT
 # DRUMS_EXT = 'drums' + EXT
 # CSV_FILE_PATH = "/Users/mac/pythonProject1/pythonProject/utils"
+def foo(arg):
+    save_path = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file"
+    SAVE_PATH = save_path
+    args = [FILE_TYPE, TWO_STEMS, ROLE, FLAG, SAVE_PATH, MODEL_FLAG, MODEL] + [arg]
+    demucs.separate.main(args)
 
 
-def apply_demucs_create_anno_file(audio_data_dir, csv_file_name, save_path, graveyard):
+def apply_demucs_create_anno_file(audio_data_dir):
     """
     Extracts all the audio files from in_path and its subdirectories, then cuts each audio file into
     segments of specified length with overlap, and saves them to out_path using librosa. If dump_shorter
@@ -41,10 +47,20 @@ def apply_demucs_create_anno_file(audio_data_dir, csv_file_name, save_path, grav
     """
     # if not os.path.exists(out_path):
     #     os.makedirs(out_path)
+    graveyard = None
+    dir_name = os.path.basename(audio_data_dir)
+    csv_file_name = f"C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file\\annotation{dir_name}.csv"
+    save_path = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file"
+
     rel_paths, files = make_all_files_list(audio_data_dir, graveyard)
+    print(len(rel_paths))
     SAVE_PATH = save_path
-    args =  [FILE_TYPE, TWO_STEMS, ROLE, FLAG, SAVE_PATH, MODEL_FLAG, MODEL] + rel_paths
-    demucs.separate.main(args)
+    p = multiprocessing.Pool()
+    res = p.map(foo,rel_paths)
+    p.close()
+    # for i in rel_paths:
+    #     args =  [FILE_TYPE, TWO_STEMS, ROLE, FLAG, SAVE_PATH, MODEL_FLAG, MODEL] + [i]
+    #     demucs.separate.main(args)
     demucs_out_dir = os.path.join(SAVE_PATH,MODEL)
     # Prepare to write to the CSV file
     # with open(csv_file_name, mode='w', newline='', encoding='utf-8') as file:
@@ -70,7 +86,7 @@ def apply_demucs_create_anno_file(audio_data_dir, csv_file_name, save_path, grav
             writer.writerow([files[i], rel_paths[i],audio_drums,audio_no_drums])
 
 
-def make_all_files_list(dir_path,files_graveyard):
+def make_all_files_list(dir_path,graveyard):
     rel_paths = []
     files_names = []
     audio_extensions = ['.mp3', '.wav']
@@ -86,7 +102,7 @@ def make_all_files_list(dir_path,files_graveyard):
             if os.path.splitext(file)[1].lower() in audio_extensions:
                 # Construct the path relative to the provided directory
                 abs_path = os.path.join(root, file)
-                if not check_file(abs_path,files_graveyard):
+                if not check_file(abs_path,graveyard):
                     continue
                 # Write the file name and its relative path to the CSV
                 rel_paths.append(abs_path)
@@ -96,7 +112,7 @@ def make_all_files_list(dir_path,files_graveyard):
 
 def check_file(file_path,files_graveyard,move_corrupted = False):
     try:
-        audio, sr = torch.torchaudio.load(file_path)  # Load audio with its native sampling rate
+        audio, sr = torchaudio.load(file_path)  # Load audio with its native sampling rate
         # if sr != SAMPLE_RATE:
         #     return False
         return True
@@ -108,11 +124,26 @@ def check_file(file_path,files_graveyard,move_corrupted = False):
         return False
 
 if __name__ == '__main__':
-    audio_data_dir, csv_file_name, save_path = sys.argv[1], sys.argv[2], sys.argv[3]
-    if len(sys.argv) == 5:
-        graveyard = sys.argv[4]
-    elif len(sys.argv) == 4:
-        graveyard = None
-    else:
-        raise ValueError("wrong arguments")
-    apply_demucs_create_anno_file(audio_data_dir, csv_file_name, save_path, graveyard)
+    data_prep_path = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file\\utils\\data_prep_utils.py"
+    audio_data_dir = "D:\\yuval.shaffir\\fma_small"
+    csv_file_name = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file\\annotation.csv"
+    save_path = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file"
+    dirs = os.listdir(audio_data_dir)
+    for i in range(len(dirs)):
+        path = os.path.join(audio_data_dir,dirs[i])
+        dirs[i] = path
+        apply_demucs_create_anno_file(path)
+    # p = multiprocessing.Pool()
+    # p.map(apply_demucs_create_anno_file,dirs)
+    # p.close()
+
+
+        # graveyard = ""
+        # audio_data_dir, csv_file_name, save_path = sys.argv[1], sys.argv[2], sys.argv[3]
+        # if len(sys.argv) == 5:
+        #     graveyard = sys.argv[4]
+        # elif len(sys.argv) == 4:
+        #     graveyard = None
+        # else:
+        #     raise ValueError("wrong arguments")
+

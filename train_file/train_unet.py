@@ -7,8 +7,8 @@ from tqdm.auto import tqdm
 from pathlib import Path
 import os
 
-from diffusers import DDPMPipeline
-from diffusers.utils import make_image_grid
+# from diffusers import DDPMPipeline
+# from diffusers.utils import make_image_grid
 
 from dataclasses import dataclass
 from torch.utils.data import DataLoader
@@ -51,9 +51,9 @@ class TrainingConfig:
     eval_epoch = 10
     save_model_epochs = 5
     mixed_precision = "fp16"  # `no` for float32, `fp16` for automatic mixed precision
-    root_dir = "/Users/mac/pythonProject1/pythonProject/train_file"
+    root_dir = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file"
     output_dir = os.path.join(root_dir, "out_dir")
-    models_dir = os.path.join(root_dir, "../models")
+    models_dir = os.path.join(root_dir, "models")
     csv_file_path = os.path.join(root_dir, "anno.csv")
     push_to_hub = False  # whether to upload the saved model to the HF Hub
     hub_model_id = "<your-username>/<my-awesome-model>"  # the name of the repository to create on the HF Hub
@@ -92,19 +92,19 @@ def load_pretrained_models(dir_path):
 def evaluate(config, epoch, pipeline):
     # Sample some images from random noise (this is the backward diffusion process).
     # The default pipeline output type is `List[PIL.Image]`
-    images = pipeline(
-        batch_size=config.eval_batch_size,
-        generator=torch.manual_seed(config.seed),
-    ).images
-
-    # Make a grid out of the images
-    image_grid = make_image_grid(images, rows=4, cols=4)
-
-    # Save the images
-    test_dir = os.path.join(config.output_dir, "samples")
-    os.makedirs(test_dir, exist_ok=True)
-    image_grid.save(f"{test_dir}/{epoch:04d}.png")
-
+    # images = pipeline(
+    #     batch_size=config.eval_batch_size,
+    #     generator=torch.manual_seed(config.seed),
+    # ).images
+    #
+    # # Make a grid out of the images
+    # image_grid = make_image_grid(images, rows=4, cols=4)
+    #
+    # # Save the images
+    # test_dir = os.path.join(config.output_dir, "samples")
+    # os.makedirs(test_dir, exist_ok=True)
+    # image_grid.save(f"{test_dir}/{epoch:04d}.png")
+    pass
 def train_loop(config, unet, vae, noise_scheduler, optimizer, train_dataloader, lr_scheduler):
     # Initialize accelerator and tensorboard logging
     accelerator = Accelerator(
