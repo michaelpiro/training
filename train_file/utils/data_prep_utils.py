@@ -124,12 +124,14 @@ def check_file(file_path,files_graveyard,move_corrupted = False):
         return False
 
 if __name__ == '__main__':
+    start = sys.argv[1]
+    end = sys.argv[2]
     data_prep_path = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file\\utils\\data_prep_utils.py"
     audio_data_dir = "D:\\yuval.shaffir\\fma_small"
     csv_file_name = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file\\annotation.csv"
     save_path = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file"
     dirs = os.listdir(audio_data_dir)
-    for i in range(len(dirs)):
+    for i in range(start,end,1):
         path = os.path.join(audio_data_dir,dirs[i])
         dirs[i] = path
         apply_demucs_create_anno_file(path)
