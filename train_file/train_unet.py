@@ -17,7 +17,7 @@ from diffusers.optimization import get_cosine_schedule_with_warmup
 
 from data.dataset import CustomAudioDataset
 
-
+# torch.set_default_dtype(torch.float16)
 @dataclass
 class TrainingConfig:
     # AUDIO CONFIGS
@@ -42,15 +42,15 @@ class TrainingConfig:
 
     loss_noise_factor = 0.3
     loss_diff_drums_factor = 1 - loss_noise_factor
-    train_batch_size = 4
+    train_batch_size = 32
     eval_batch_size = 16  # how many images to sample during evaluation
     num_epochs = 50
-    gradient_accumulation_steps = 1
+    gradient_accumulation_steps = 2
     learning_rate = 1e-4
     lr_warmup_steps = 2000
     eval_epoch = 10
     save_model_epochs = 5
-    mixed_precision = "fp16"  # `no` for float32, `fp16` for automatic mixed precision
+    mixed_precision = "no"  # `no` for float32, `fp16` for automatic mixed precision
     root_dir = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file"
     output_dir = os.path.join(root_dir, "out_dir")
     # models_dir = os.path.join(root_dir, "models")
@@ -86,8 +86,8 @@ def load_pretrained_models(dir_path):
         # "vae": torch.load(f"{dir_path}/vae",map_location=torch.device('cpu')).half(),
         # "vocoder": torch.load(f"{dir_path}/vocoder",map_location=torch.device('cpu')),
         # "scheduler": torch.load(f"{dir_path}/scheduler",map_location=torch.device('cpu'))
-        "unet": torch.load(p1),
-        "vae": torch.load(p2),
+        "unet": torch.load(p1).cuda(),
+        "vae": torch.load(p2).cuda(),
         "vocoder": torch.load(p3),
         "scheduler": torch.load(p4)
     }
@@ -134,6 +134,7 @@ def train_loop(config, unet, vae, noise_scheduler, optimizer, train_dataloader, 
     unet, vae, optimizer, train_dataloader, lr_scheduler = accelerator.prepare(
         unet, vae, optimizer, train_dataloader, lr_scheduler
     )
+    unet.train()
 
     global_step = 0
 
@@ -146,18 +147,17 @@ def train_loop(config, unet, vae, noise_scheduler, optimizer, train_dataloader, 
 
             #TODO: GET ITEM RETURN (NO_DRUM_SPEC,DRUM_SPEC)
             batch_no_drum_spec, batch_drum_spec = batch
-            batch_drum_spec = batch_drum_spec.float()
-            batch_no_drum_spec = batch_no_drum_spec.float()
-            print(batch_no_drum_spec.unsqueeze(1).shape)
-            print(batch_drum_spec.shape)
+            # batch_drum_spec = batch_drum_spec.half()
+            # batch_no_drum_spec = batch_no_drum_spec.half()
+            # print(batch_no_drum_spec.unsqueeze(1).shape)
+            # print(batch_drum_spec.shape)
 
-            latents_drums = vae.encode(batch_drum_spec.unsqueeze(1)).latent_dist.sample() * 0.18215
-            latents_no_drums = vae.encode(batch_no_drum_spec.unsqueeze(1)).latent_dist.sample() * 0.18215
+            latents_drums = (vae.encode(batch_drum_spec.unsqueeze(1)).latent_dist.sample() * 0.18215).half()
+            latents_no_drums = (vae.encode(batch_no_drum_spec.unsqueeze(1)).latent_dist.sample() * 0.18215).half()
 
             # latents_drums = torch.randn(config.train_batch_size, 8, 256, 16, device=batch_drum_spec.device, dtype=torch.float32)
             # latents_no_drums = torch.randn(config.train_batch_size, 8, 256, 16, device=batch_drum_spec.device, dtype=torch.float32)
 
-            print("step",step)
 
 
             # noise_minus_drums = noise + latents_drums
@@ -181,9 +181,12 @@ def train_loop(config, unet, vae, noise_scheduler, optimizer, train_dataloader, 
             # drums_noise = sampled_noise + latent_drums_as_noise
             # noise = drums_noise
             # noisy_latent = noise_scheduler.add_noise(latents_no_drums, noise, timesteps)
+
             with accelerator.accumulate(unet):
                 # Predict the noise residual
                 # noise_pred = unet(noisy_latents,timesteps, encoder_hidden_states=latents_no_drums, return_dict=False)[0]
+            # with accelerator.autocast():
+                print(noisy_latents.dtype)
                 noise_pred = unet(noisy_latents,timesteps, encoder_hidden_states=None, return_dict=False)[0]
                 print(noise_pred.dtype)
 
@@ -192,8 +195,8 @@ def train_loop(config, unet, vae, noise_scheduler, optimizer, train_dataloader, 
                 loss = F.mse_loss(noise_pred, noise)
                 print(loss.dtype)
                 accelerator.backward(loss)
-
-                accelerator.clip_grad_norm_(unet.parameters(), 1.0)
+                if accelerator.sync_gradients:
+                    accelerator.clip_grad_norm_(unet.parameters(), 1.0)
                 optimizer.step()
                 lr_scheduler.step()
                 optimizer.zero_grad()
@@ -232,10 +235,10 @@ if __name__ == '__main__':
     unet = models["unet"]
     unet.config.sample_size = 32768
     print(unet.num_parameters())
-    unet = unet.train()
-    unet = unet.float()
+    # unet = unet.train()
+    # unet = unet.half()
     noise_scheduler = models["scheduler"]
-    vae = models["vae"].float()
+    vae = models["vae"]
     vae.requires_grad_(False)
     optimizer = torch.optim.AdamW(unet.parameters(), lr=config.learning_rate)
     lr_scheduler = get_cosine_schedule_with_warmup(

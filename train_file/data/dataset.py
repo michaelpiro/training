@@ -161,8 +161,7 @@ class CustomAudioDataset(Dataset):
         """
 
         # Ensure the desired length is not greater than the audio tensor length
-        print(length)
-        print(audio1.shape)
+
         if length > audio1.size(0):
             raise ValueError("Desired length is greater than the audio tensor length.")
 
