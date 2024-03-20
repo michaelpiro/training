@@ -6,10 +6,10 @@ from huggingface_hub import create_repo, upload_folder
 from tqdm.auto import tqdm
 from pathlib import Path
 import os
-
+# os.environ['KMP_DUPLICATE_LIB_OK']='True'
 # from diffusers import DDPMPipeline
 # from diffusers.utils import make_image_grid
-
+from diffusers import AudioLDM2Pipeline
 from dataclasses import dataclass
 from torch.utils.data import DataLoader
 import torch.nn.functional as F
@@ -53,8 +53,10 @@ class TrainingConfig:
     mixed_precision = "fp16"  # `no` for float32, `fp16` for automatic mixed precision
     root_dir = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file"
     output_dir = os.path.join(root_dir, "out_dir")
-    models_dir = os.path.join(root_dir, "models")
-    csv_file_path = os.path.join(root_dir, "anno.csv")
+    # models_dir = os.path.join(root_dir, "models")
+    # csv_file_path = os.path.join(root_dir, "anno.csv")
+    csv_file_path ="D:\\yuval.shaffir\\annotation_check.csv"
+    models_dir = "D:\\yuval.shaffir\\models"
     push_to_hub = False  # whether to upload the saved model to the HF Hub
     hub_model_id = "<your-username>/<my-awesome-model>"  # the name of the repository to create on the HF Hub
     hub_private_repo = False
@@ -74,16 +76,20 @@ def load_pretrained_models(dir_path):
     Returns:
     - models (dict): A dictionary containing the loaded models.
     """
+
+    p1 = os.path.join(dir_path,"unet")
+    p2 = os.path.join(dir_path,"vae")
+    p3 = os.path.join(dir_path,"vocoder")
+    p4 = os.path.join(dir_path,"scheduler")
     models = {
         # "unet": torch.load(f"{dir_path}/try_unet",map_location=torch.device('cpu')),
         # "vae": torch.load(f"{dir_path}/vae",map_location=torch.device('cpu')).half(),
         # "vocoder": torch.load(f"{dir_path}/vocoder",map_location=torch.device('cpu')),
         # "scheduler": torch.load(f"{dir_path}/scheduler",map_location=torch.device('cpu'))
-
-        "unet": torch.load(f"{dir_path}/try_unet"),
-        "vae": torch.load(f"{dir_path}/vae"),
-        "vocoder": torch.load(f"{dir_path}/vocoder"),
-        "scheduler": torch.load(f"{dir_path}/scheduler")
+        "unet": torch.load(p1),
+        "vae": torch.load(p2),
+        "vocoder": torch.load(p3),
+        "scheduler": torch.load(p4)
     }
     return models
 
@@ -140,9 +146,10 @@ def train_loop(config, unet, vae, noise_scheduler, optimizer, train_dataloader, 
 
             #TODO: GET ITEM RETURN (NO_DRUM_SPEC,DRUM_SPEC)
             batch_no_drum_spec, batch_drum_spec = batch
+            batch_drum_spec = batch_drum_spec.float()
+            batch_no_drum_spec = batch_no_drum_spec.float()
             print(batch_no_drum_spec.unsqueeze(1).shape)
             print(batch_drum_spec.shape)
-
 
             latents_drums = vae.encode(batch_drum_spec.unsqueeze(1)).latent_dist.sample() * 0.18215
             latents_no_drums = vae.encode(batch_no_drum_spec.unsqueeze(1)).latent_dist.sample() * 0.18215
@@ -178,11 +185,12 @@ def train_loop(config, unet, vae, noise_scheduler, optimizer, train_dataloader, 
                 # Predict the noise residual
                 # noise_pred = unet(noisy_latents,timesteps, encoder_hidden_states=latents_no_drums, return_dict=False)[0]
                 noise_pred = unet(noisy_latents,timesteps, encoder_hidden_states=None, return_dict=False)[0]
-                print(noise_pred.shape)
+                print(noise_pred.dtype)
 
                 # loss = config.loss_noise_factor*F.mse_loss(noise_pred, noise) + \
                 #     config.loss_diff_drums_factor*F.mse_loss(noise_pred,noisy_no_drums_latents)
                 loss = F.mse_loss(noise_pred, noise)
+                print(loss.dtype)
                 accelerator.backward(loss)
 
                 accelerator.clip_grad_norm_(unet.parameters(), 1.0)
@@ -224,10 +232,10 @@ if __name__ == '__main__':
     unet = models["unet"]
     unet.config.sample_size = 32768
     print(unet.num_parameters())
-    unet.train()
-    unet.float()
+    unet = unet.train()
+    unet = unet.float()
     noise_scheduler = models["scheduler"]
-    vae = models["vae"]
+    vae = models["vae"].float()
     vae.requires_grad_(False)
     optimizer = torch.optim.AdamW(unet.parameters(), lr=config.learning_rate)
     lr_scheduler = get_cosine_schedule_with_warmup(

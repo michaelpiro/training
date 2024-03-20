@@ -7,7 +7,7 @@ import torchaudio
 import torch
 from torch.utils.data import Dataset
 
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 
 
@@ -24,10 +24,9 @@ AUDIO_LEN_SEC = 5
 TARGET_LENGTH = 1024
 NUM_SAMPLES = (TARGET_LENGTH - 1) * HOP_LENGTH
 TARGET_LENGTH_SEC = NUM_SAMPLES / TARGET_SR
-NAME = 0
-ORIG_FILE = 1
-DRUMS_FILE = 2
-NO_DRUMS_FILE = 3
+ORIG_FILE = 0
+DRUMS_FILE = 1
+NO_DRUMS_FILE = 2
 
 
 def extract_log_mel_spectrogram(audio,
@@ -86,8 +85,8 @@ class CustomAudioDataset(Dataset):
         # no_drums_waveform = no_drums_waveform.half()
 
         #convert to mono
-        no_drums_waveform = self.to_mono(no_drums_waveform)
-        orig_waveform = self.to_mono(orig_waveform)
+        no_drums_waveform = self.to_mono(no_drums_waveform).squeeze(0)
+        orig_waveform = self.to_mono(orig_waveform).squeeze(0)
 
         label = self.audio_labels.iloc[idx, 2]
 
@@ -162,6 +161,8 @@ class CustomAudioDataset(Dataset):
         """
 
         # Ensure the desired length is not greater than the audio tensor length
+        print(length)
+        print(audio1.shape)
         if length > audio1.size(0):
             raise ValueError("Desired length is greater than the audio tensor length.")
 
@@ -179,24 +180,24 @@ class CustomAudioDataset(Dataset):
 
 
 
-def plot_spectrogram(specgram,num ,title=None, ylabel="freq_bin", ax=None):
-    if ax is None:
-        _, ax = plt.subplots(1, 1)
-    if title is not None:
-        ax.set_title(title)
-    ax.set_ylabel(ylabel)
-    ax.imshow(specgram, origin="lower", aspect="auto", interpolation="nearest")
-    plt.figure(num)
+# def plot_spectrogram(specgram,num ,title=None, ylabel="freq_bin", ax=None):
+#     if ax is None:
+#         _, ax = plt.subplots(1, 1)
+#     if title is not None:
+#         ax.set_title(title)
+#     ax.set_ylabel(ylabel)
+#     ax.imshow(specgram, origin="lower", aspect="auto", interpolation="nearest")
+#     plt.figure(num)
 
-if __name__ == '__main__':
-    dataset = CustomAudioDataset("/Users/mac/pythonProject1/pythonProject/train_file/anno.csv")
-    log_mel_orig, log_mel_no_drums, orig_waveform, no_drums_waveform = dataset.__getitem__(0)
-    print(f"log_mel_no_drums.shape = {log_mel_no_drums.shape}\n")
-    print(f"log_mel_drums.shape = {log_mel_orig.shape}\n")
-    print(log_mel_no_drums.requires_grad)
-
-    plot_spectrogram(log_mel_orig,1)
-    print(log_mel_no_drums)
-    plot_spectrogram(log_mel_no_drums,2)
-    plot_spectrogram(log_mel_orig - log_mel_no_drums,3)
-    plt.show()
+# if __name__ == '__main__':
+#     dataset = CustomAudioDataset("/Users/mac/pythonProject1/pythonProject/train_file/anno.csv")
+#     log_mel_orig, log_mel_no_drums, orig_waveform, no_drums_waveform = dataset.__getitem__(0)
+#     print(f"log_mel_no_drums.shape = {log_mel_no_drums.shape}\n")
+#     print(f"log_mel_drums.shape = {log_mel_orig.shape}\n")
+#     print(log_mel_no_drums.requires_grad)
+#
+#     plot_spectrogram(log_mel_orig,1)
+#     print(log_mel_no_drums)
+#     plot_spectrogram(log_mel_no_drums,2)
+#     plot_spectrogram(log_mel_orig - log_mel_no_drums,3)
+#     plt.show()

@@ -1,15 +1,14 @@
 import sys
-sys.path.append("C:\\Users\\michaelpiro1\\PycharmProjects\\training\\venv\\Lib\\site-packages")
+sys.path.append("C:\\Users\\michaelpiro1\\AppData\\Local\\miniconda3\\envs\\demucs\\demucs")
 import shutil
 import multiprocessing
 import os
-
 import torchaudio
 
 import csv
 import demucs.separate
-import numpy
-import librosa
+# import numpy
+# import librosa
 FILE_TYPE = "--mp3"
 DTYPE = '--float32'
 TWO_STEMS = "--two-stems"
@@ -33,7 +32,7 @@ MODEL = "mdx_extra"
 # DRUMS_EXT = 'drums' + EXT
 # CSV_FILE_PATH = "/Users/mac/pythonProject1/pythonProject/utils"
 def foo(arg):
-    save_path = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file"
+    save_path = "D:\\yuval.shaffir\\3"
     SAVE_PATH = save_path
     args = [FILE_TYPE, TWO_STEMS, ROLE, FLAG, SAVE_PATH, MODEL_FLAG, MODEL] + [arg]
     demucs.separate.main(args)
@@ -123,29 +122,47 @@ def check_file(file_path,files_graveyard,move_corrupted = False):
             shutil.move(file_path, grave)
         return False
 
+# if __name__ == '__main__':
+#     start = sys.argv[1]
+#     end = sys.argv[2]
+#     data_prep_path = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file\\utils\\data_prep_utils.py"
+#     audio_data_dir = "D:\\yuval.shaffir\\fma_small"
+#     csv_file_name = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file\\annotation.csv"
+#     save_path = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file"
+#     dirs = os.listdir(audio_data_dir)
+#     for i in range(start,end,1):
+#         path = os.path.join(audio_data_dir,dirs[i])
+#         dirs[i] = path
+#         apply_demucs_create_anno_file(path)
+#     # p = multiprocessing.Pool()
+#     # p.map(apply_demucs_create_anno_file,dirs)
+#     # p.close()
+#
+#
+#         # graveyard = ""
+#         # audio_data_dir, csv_file_name, save_path = sys.argv[1], sys.argv[2], sys.argv[3]
+#         # if len(sys.argv) == 5:
+#         #     graveyard = sys.argv[4]
+#         # elif len(sys.argv) == 4:
+#         #     graveyard = None
+#         # else:
+#         #     raise ValueError("wrong arguments")
+#
 if __name__ == '__main__':
-    start = sys.argv[1]
-    end = sys.argv[2]
-    data_prep_path = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file\\utils\\data_prep_utils.py"
-    audio_data_dir = "D:\\yuval.shaffir\\fma_small"
-    csv_file_name = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file\\annotation.csv"
-    save_path = "C:\\Users\\michaelpiro1\\PycharmProjects\\training\\training\\train_file"
-    dirs = os.listdir(audio_data_dir)
-    for i in range(start,end,1):
-        path = os.path.join(audio_data_dir,dirs[i])
-        dirs[i] = path
-        apply_demucs_create_anno_file(path)
-    # p = multiprocessing.Pool()
-    # p.map(apply_demucs_create_anno_file,dirs)
-    # p.close()
-
-
-        # graveyard = ""
-        # audio_data_dir, csv_file_name, save_path = sys.argv[1], sys.argv[2], sys.argv[3]
-        # if len(sys.argv) == 5:
-        #     graveyard = sys.argv[4]
-        # elif len(sys.argv) == 4:
-        #     graveyard = None
-        # else:
-        #     raise ValueError("wrong arguments")
-
+    start = int(sys.argv[1])
+    end = int(sys.argv[2])
+    save_path = "D:\\yuval.shaffir\\separated"
+    SAVE_PATH = save_path
+    audiopath = "D:\\yuval.shaffir\\fma_small"
+    alldirs = os.listdir(audiopath)[start:end]
+    # "D:\\yuval.shaffir\\fma_small\\008"
+    for dir in alldirs:
+        path_to_dir = os.path.join(audiopath,dir)
+        files = os.listdir(path_to_dir)
+        l = []
+        for i in files:
+            p = os.path.join(path_to_dir,i)
+            print(p)
+            l.append(p)
+        args = [FILE_TYPE, TWO_STEMS, ROLE, FLAG, SAVE_PATH, MODEL_FLAG, MODEL] + l
+        demucs.separate.main(args)
