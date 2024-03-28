@@ -1,5 +1,5 @@
 import sys
-sys.path.append("C:\\Users\\michaelpiro1\\AppData\\Local\\miniconda3\\envs\\demucs\\demucs")
+# sys.path.append("C:\\Users\\michaelpiro1\\AppData\\Local\\anaconda3\\envs\\demucs\\")
 import shutil
 import multiprocessing
 import os
@@ -150,13 +150,13 @@ def check_file(file_path,files_graveyard,move_corrupted = False):
 #
 
 if __name__ == '__main__':
-    # start = int(sys.argv[1])
-    # end = int(sys.argv[2])
+    start = int(sys.argv[1])
+    end = int(sys.argv[2])
     save_path = "D:\\yuval.shaffir\\separated"
     separatred_path = os.path.join(save_path,"mdx_extra")
     SAVE_PATH = save_path
     audiopath = "D:\\yuval.shaffir\\fma_small"
-    alldirs = os.listdir(audiopath)
+    alldirs = os.listdir(audiopath)[start:end]
     # "D:\\yuval.shaffir\\fma_small\\008"
     l1 = []
     l_dirs = []
@@ -171,7 +171,7 @@ if __name__ == '__main__':
             if not os.path.exists(if_dir):
                 l2.append(p)
         if len(l2) == 0:
-            with open ("C:\\Users\\michaelpiro1\\PycharmProjects\\pythonProject1\\training\\utils\\done_with.txt", 'a') as f:
+            with open ("C:\\Users\\michaelpiro1\\PycharmProjects\\pythonProject3\\training\\utils\\done_with.txt", 'a') as f:
                 f.write(f"{dir}\n")
         else:
             l_dirs.append(dir)
@@ -181,7 +181,7 @@ if __name__ == '__main__':
         d = l_dirs[j]
         args = [FILE_TYPE, TWO_STEMS, ROLE, FLAG, SAVE_PATH, MODEL_FLAG, MODEL] + names
         demucs.separate.main(args)
-        with open("C:\\Users\\michaelpiro1\\PycharmProjects\\pythonProject1\\training\\utils\\done_with.txt", 'a') as f:
+        with open("C:\\Users\\michaelpiro1\\PycharmProjects\\pythonProject3\\training\\utils\\done_with.txt", 'a') as f:
             f.write(f"{d}\n")
 
 
