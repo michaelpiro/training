@@ -148,21 +148,40 @@ def check_file(file_path,files_graveyard,move_corrupted = False):
 #         # else:
 #         #     raise ValueError("wrong arguments")
 #
+
 if __name__ == '__main__':
-    start = int(sys.argv[1])
-    end = int(sys.argv[2])
+    # start = int(sys.argv[1])
+    # end = int(sys.argv[2])
     save_path = "D:\\yuval.shaffir\\separated"
+    separatred_path = os.path.join(save_path,"mdx_extra")
     SAVE_PATH = save_path
     audiopath = "D:\\yuval.shaffir\\fma_small"
-    alldirs = os.listdir(audiopath)[start:end]
+    alldirs = os.listdir(audiopath)
     # "D:\\yuval.shaffir\\fma_small\\008"
+    l1 = []
+    l_dirs = []
     for dir in alldirs:
         path_to_dir = os.path.join(audiopath,dir)
         files = os.listdir(path_to_dir)
-        l = []
+        l2 = []
         for i in files:
             p = os.path.join(path_to_dir,i)
-            print(p)
-            l.append(p)
-        args = [FILE_TYPE, TWO_STEMS, ROLE, FLAG, SAVE_PATH, MODEL_FLAG, MODEL] + l
+            name = os.path.splitext(i)[0]
+            if_dir = os.path.join(separatred_path,name)
+            if not os.path.exists(if_dir):
+                l2.append(p)
+        if len(l2) == 0:
+            with open ("C:\\Users\\michaelpiro1\\PycharmProjects\\pythonProject1\\training\\utils\\done_with.txt", 'a') as f:
+                f.write(f"{dir}\n")
+        else:
+            l_dirs.append(dir)
+            l1.append(l2)
+    for j in range(len(l_dirs)):
+        names = l1[j]
+        d = l_dirs[j]
+        args = [FILE_TYPE, TWO_STEMS, ROLE, FLAG, SAVE_PATH, MODEL_FLAG, MODEL] + names
         demucs.separate.main(args)
+        with open("C:\\Users\\michaelpiro1\\PycharmProjects\\pythonProject1\\training\\utils\\done_with.txt", 'a') as f:
+            f.write(f"{d}\n")
+
+
